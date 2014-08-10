@@ -1,0 +1,77 @@
+一些想法
+
+现在回头在看event这个例子，它到底有哪些方面值得我们学习？我觉得就是驱动中对一些竞争条件的处理。换个说法将，如果当我们的驱动面临这样一个执行环境时，我们会考虑到这些竞争条件吗？我觉得考虑不到，那为什么考虑不到？说明我们对驱动所处的运行环境还是不太清楚，说白了对内核的一些东西还是不理解。相比较，假如这是一个应用程序，我们是绝对可以考虑的这些竞争条件的。
+
+下面是对驱动中竞争竞争条件处理的一个总结。
+
+CustomTimerDPC和EventCancelRoutine之间的竞争关系
+
+1.  CustomTimerDPC先获取SpinLock，但在尚未调用IoCompleteRequest完成IRP之前，IRP被cancel，于是EventCancelRoutine开始运行
+    并阻塞于SpinLock
+2.  在定时器触发之前，IRP被cancel，于是EventCancelRoutine先获取SpinLock，但在EventCancelRoutine取消定时器之前，定时器到
+    期触发，于是CustomTimerDPC运行并阻塞于SpinLock
+3. CustomTimer和EventCancelRoutine各自运行期间，对方都没有运行。
+
+
+EventCleanup与CustomTimerDPC和EventCancelRoutine之间的竞争关系
+
+1. EventCleanup先获取SpinLock,但在取消定时器之前，定时器触发，于是CustomTimerDPC开始运行并阻塞于SpinLock
+2. EventCleanup先获取SpinLock，CustomTimerDPC未运行，但EventCancelRoutine已经在运行。
+3. EventCleanup先获取SpinLock，CustomTimerDPC未运行，EventCancelRoutine也没有运行
+
+驱动中存在的竞争关系就如上面所示，然后驱动中对于竞争关系的处理可以这样理解。即只要三者存在竞争关系（即3者同时在处理一个IRP），不管是谁获得SpinLock，IRP最终的处理由优先级那个去做。三者的优先级关系如下：
+    
+    EventCleanup < CustomTimerDPC < EventCancelRoutine
+
+
+OK，上面就是我从这个example中学到的最主要的东西吧。其实有一个感触，就是说看代码时千万陷到代码里，代码是用来表现逻辑并处理逻辑的，理清代码背后的逻辑才是王道。
+
+OK，重要的说完了，在中一点零碎的东西。
+
+首先是关于Remove Locks，首先说说对这个东西的理解，可以说它就是一个带计数功能的KEVENT对象，这一点我们可以中它的结构定义中看到。如下所示：
+
+typedef struct _IO_REMOVE_LOCK_COMMON_BLOCK {
+    BOOLEAN     Removed;
+    BOOLEAN     Reserved [3];
+    __volatile LONG        IoCount;
+    KEVENT      RemoveEvent;
+
+} IO_REMOVE_LOCK_COMMON_BLOCK;
+
+typedef struct _IO_REMOVE_LOCK_DBG_BLOCK {
+    LONG        Signature;
+    ULONG       HighWatermark;
+    LONGLONG    MaxLockedTicks;
+    LONG        AllocateTag;
+    LIST_ENTRY  LockList;
+    KSPIN_LOCK  Spin;
+    __volatile LONG        LowMemoryCount;
+    ULONG       Reserved1[4];
+    PVOID       Reserved2;
+    PIO_REMOVE_LOCK_TRACKING_BLOCK Blocks;
+} IO_REMOVE_LOCK_DBG_BLOCK;
+
+typedef struct _IO_REMOVE_LOCK {
+    IO_REMOVE_LOCK_COMMON_BLOCK Common;
+#if DBG
+    IO_REMOVE_LOCK_DBG_BLOCK Dbg;
+#endif
+} IO_REMOVE_LOCK, *PIO_REMOVE_LOCK;
+
+可以看到，它的核心确实是一个KEVENT对象，只不过加上了计数功能。而且文档中也说了，这是microsoft提供的用于跟踪在一个设备对象上尚未完成的IO操作的数目，从而进一步用于确定什么时间安全的删除相应的设备对象的一个官方的解决方案。就是说，大多数驱动都会碰到类似的需求，而这个需求是可以给一个统一的解决方案的，没必要让每一个程序员去为这个一个需求去各自开发各自的解决方案。
+
+然后，我更想说的是，Remve Locks的使用环境，在什么情况下，我们需要这个东西，我觉得这个才是更重要的，这个需要我们在思考下。
+
+OK，remove locks说完在，再说一个FILE_OBJECT.FsContext，下面是msdn上对这个成员的解释：
+
+A pointer to whatever optional state a driver maintains about the file object; otherwise, NULL. For file system drivers, this member must point to a FSRTL_ADVANCED_FCB_HEADER header structure that is contained within a file-system-specific structure; otherwise system instability can result. Usually, this header structure is embedded in a file control block (FCB). However, on some file systems that support multiple data streams, such as NTFS, this header structure is a stream control block (SCB).
+
+Note  In a WDM device stack, only the functional device object (FDO) can use the two context pointers. File system drivers share this member across multiple opens to the same data stream.
+
+Drivers can use the FsContext and FsContext2 members to maintain driver-determined state about an open file object. A driver cannot use these members unless the file object is accessible in the driver's I/O stack location of an IRP.
+
+
+我的理解是个成员就是留给驱动作者用于给特定FILE_OBJECT关联一段自己特定的数据用的。上面提到的file system drivers对这个成员的使用，对我们来说，正是一个参考。
+
+
+OK，就这么多吧，其他零碎的东西就先不说了，先告一段落，不然在拖下去，耐心就没了

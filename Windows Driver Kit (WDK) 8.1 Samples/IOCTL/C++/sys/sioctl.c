@@ -403,7 +403,7 @@ Return Value:
         try {
             //
             // Before accessing user buffer, you must probe for read/write
-            // to make sure the buffer is indeed an userbuffer with proper access
+            // to make sure the buffer is indeed an user buffer with proper access
             // rights and length. ProbeForRead/Write will raise an exception if it's otherwise.
             //
             ProbeForRead( inBuf, inBufLength, sizeof( UCHAR ) );
