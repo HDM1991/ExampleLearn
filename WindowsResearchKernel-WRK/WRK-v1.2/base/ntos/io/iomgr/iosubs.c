@@ -11773,7 +11773,10 @@ Return Value:
         // The StartIo routine should handle the cancellation.
         //
 
-        // TODO(H): 说明 StartIo Routine 可能运行在 Dispath Routine 的上下文中
+        //
+        // TODO(H): 从这里来看 StartIo Routine 可能运行在 Dispath Routine 的上下文中
+        //
+
         DeviceObject->DriverObject->DriverStartIo( DeviceObject, Irp );
 
     } else {
@@ -11787,6 +11790,10 @@ Return Value:
         // from another processor at this point will simply wait until this
         // routine is finished, and then get it cancelled.
         //
+
+        //
+        // TODO(H): 这里可以理解为尽量避免 StartIo Routine 和 Cancel Routine 
+        //          之间的竞争关系。
 
         if (CancelFunction) {
             if (Irp->Cancel) {
