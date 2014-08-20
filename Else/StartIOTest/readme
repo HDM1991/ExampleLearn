@@ -27,4 +27,4 @@ IoStartPacket 和 IoStartNextPacket 调用的对 IRP 队列进行操作的相关
 https://github.com/HDM1991/ExampleLearn/blob/master/WindowsResearchKernel-WRK/WRK-v1.2/base/ntos/ke/devquobj.c
 
 示例代码
-https://github.com/HDM1991/ExampleLearn/blob/master/Else/tartIOTest/NT_Driver/Driver.cpp
+https://github.com/HDM1991/ExampleLearn/tree/master/Else/StartIOTest/NT_Driver/Driver.cpp
