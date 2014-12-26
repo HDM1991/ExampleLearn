@@ -1,12 +1,9 @@
 为什么会有这个项目？
-
+===
 这个项目完全是一时的想到的主意。起因是在平常的学习过程中会看一些示例代码，而在学习这些示例代码的过程中通常会对这些代码添加注释和修改。而这些添加的注释和修改对我而言真的非常重要的，但怎样记录这些注释和修改呢？直到有一天我突然想到了github。嗯。。。我觉得一切还不晚
 
-
 目录介绍
-
-Windows Driver Kit (WDK) 8.1 Samples - 顾名思义，是 Microsoft 驱动开发包配对的官方示例
-
-WindowsResearchKernel-WRK - Microsoft 公开的一份 Windows 内核代码
-
-Else - 其他的一些示例代码，主要是配合其他示例代码和对其他示例代码作为一个补充
+===
+* Windows Driver Kit (WDK) 8.1 Samples - 顾名思义，是 Microsoft 驱动开发包配对的官方示例
+* WindowsResearchKernel-WRK - Microsoft 公开的一份 Windows 内核代码
+* Else - 其他的一些示例代码，主要是配合其他示例代码和对其他示例代码作为一个补充
