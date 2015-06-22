@@ -21,3 +21,6 @@ obcallback 这个 example 比较简单，粗糙，基本就是向我们展示了
 > This routine is called at PASSIVE_LEVEL in an arbitrary thread context with normal kernel APCs disabled。
 
 更确切一点应该是运行在执行该操作的进程的任意线程上下文中。
+
+### 相关源码
+[WDK 8.1 Sample - ObCallback Callback Registration Driver](https://github.com/HDM1991/ExampleLearn/tree/master/Windows%20Driver%20Kit%20(WDK)%208.1%20Samples/ObCallback%20Callback%20Registration%20Driver)

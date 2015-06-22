@@ -69,5 +69,5 @@ OK, 上面这些就是我从这个例子中学到的最主要的东西。另外�
 
 OK，就这么多吧，其他零碎的东西就先不说了，先告一段落，不然在拖下去，耐心就没了.
 
-[1]:    https://msdn.microsoft.com/zh-cn/library/ff565504(v=vs.85).aspx    "Using Remove Locks"
-[2]:    https://msdn.microsoft.com/en-us/library/windows/hardware/ff545834(v=vs.85).aspx    "FILE_OBJECT structure"
+### 相关源码
+[WDK 8.1 Sample - Hardware Event Sample](https://github.com/HDM1991/ExampleLearn/tree/master/Windows%20Driver%20Kit%20(WDK)%208.1%20Samples/Hardware%20Event%20Sample)
