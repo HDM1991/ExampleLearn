@@ -96,9 +96,6 @@ Return Value:
 --*/
 
 {
-
-    
-
     PDEVICE_OBJECT      deviceObject;
     PDEVICE_EXTENSION   deviceExtension;
     UNICODE_STRING      ntDeviceName;
@@ -114,14 +111,13 @@ Return Value:
     //
     RtlInitUnicodeString(&ntDeviceName, NTDEVICE_NAME_STRING);
 
-    status = IoCreateDevice(DriverObject,               // DriverObject
-                            sizeof(DEVICE_EXTENSION), // DeviceExtensionSize
-                            &ntDeviceName,              // DeviceName
-                            FILE_DEVICE_UNKNOWN,        // DeviceType
-                            FILE_DEVICE_SECURE_OPEN,    // DeviceCharacteristics
-                            FALSE,                      // Not Exclusive
-                            &deviceObject               // DeviceObject
-                           );
+    status = IoCreateDevice(DriverObject, 
+                            sizeof(DEVICE_EXTENSION), 
+                            &ntDeviceName, 
+                            FILE_DEVICE_UNKNOWN, 
+                            FILE_DEVICE_SECURE_OPEN, 
+                            FALSE, 
+                            &deviceObject);
 
     if (!NT_SUCCESS(status)) {
         DebugPrint(("\tIoCreateDevice returned 0x%x\n", status));
@@ -131,11 +127,11 @@ Return Value:
     //
     // Set up dispatch entry points for the driver.
     //
-    DriverObject->MajorFunction[IRP_MJ_CREATE]          = EventCreateClose;
-    DriverObject->MajorFunction[IRP_MJ_CLOSE]           = EventCreateClose;
-    DriverObject->MajorFunction[IRP_MJ_CLEANUP]         = EventCleanup;
+    DriverObject->MajorFunction[IRP_MJ_CREATE]  = EventCreateClose;
+    DriverObject->MajorFunction[IRP_MJ_CLOSE]   = EventCreateClose;
+    DriverObject->MajorFunction[IRP_MJ_CLEANUP] = EventCleanup;
     DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL]  = EventDispatchIoControl;
-    DriverObject->DriverUnload                          = EventUnload;
+    DriverObject->DriverUnload = EventUnload;
 
     //
     // Create a symbolic link for userapp to interact with the driver.
@@ -196,8 +192,8 @@ Return Value:
 
 {
 
-    PDEVICE_OBJECT       deviceObject = DriverObject->DeviceObject;
-    PDEVICE_EXTENSION    deviceExtension = deviceObject->DeviceExtension;
+    PDEVICE_OBJECT      deviceObject = DriverObject->DeviceObject;
+    PDEVICE_EXTENSION   deviceExtension = deviceObject->DeviceExtension;
     UNICODE_STRING      symbolicLinkName;
 
     DebugPrint(("==>Unload\n"));
@@ -242,7 +238,7 @@ Return Value:
 
 --*/
 {
-    PIO_STACK_LOCATION irpStack;
+    PIO_STACK_LOCATION  irpStack;
     NTSTATUS            status;
     PFILE_CONTEXT       fileContext;
 
@@ -259,14 +255,14 @@ Return Value:
         case IRP_MJ_CREATE:
             DebugPrint(("IRP_MJ_CREATE\n"));
 
-			// TODO(H): 关于File Object和Device Object之间的关系记得不太清楚。
-			//			但这里在这个IRP的FileObject成员的FsContext成员中保存
-			//			先不说
-			//			这里File Object和Device Object应该是代表同一个东西，看来
-			//			需要复习一下，对象管理器的一些东西了
+            // TODO(H): 关于File Object 和 Device Object之间的关系记得不太清楚。
+            //          但这里在这个IRP的FileObject成员的FsContext成员中保存
+            //          先不说
+            //          这里File Object和Device Object应该是代表同一个东西，看来
+            //          需要复习一下，对象管理器的一些东西了
             fileContext = ExAllocatePoolWithQuotaTag(NonPagedPool, 
-                                              sizeof(FILE_CONTEXT),
-                                              TAG);
+                                                     sizeof(FILE_CONTEXT),
+                                                     TAG);
 
             if (NULL == fileContext) {
                 status =  STATUS_INSUFFICIENT_RESOURCES;
@@ -398,7 +394,7 @@ Return Value:
             // and free the record.
             //
             if (KeCancelTimer(&notifyRecord->Timer)) 
-			{
+            {
 
                 DebugPrint(("\tCanceled timer\n"));
                 RemoveEntryList(thisEntry);
@@ -411,7 +407,7 @@ Return Value:
                     //
                     if (IoSetCancelRoutine (notifyRecord->Message.PendingIrp, NULL) != NULL) {
 
-						// TODO(H): EventCleanup先获取SpinLock，CustomTimerDPC未运行，EventCancelRoutine也没有运行
+                        // TODO(H): EventCleanup先获取SpinLock，CustomTimerDPC未运行，EventCancelRoutine也没有运行
 
                         //
                         // We cleared it and as a result we own the IRP and
@@ -429,7 +425,7 @@ Return Value:
 
                     } else {
 
-						// TODO(H): EventCleanup先获取SpinLock，CustomTimerDPC未运行，但EventCancelRoutine已经在运行。
+                        // TODO(H): EventCleanup先获取SpinLock，CustomTimerDPC未运行，但EventCancelRoutine已经在运行。
 
                         //
                         // The I/O manager cleared it and called the cancel-routine.
@@ -452,12 +448,12 @@ Return Value:
 
                 }
             }
-			else
-			{
-				// TODO(H): EventCleanup先获取SpinLock, 但在尚未IoCompleteRequest之前，CustomTimerDPC开始运行，
-				//			于是CustomTimerDPC阻塞于SpinLock
-				//			此时，EventCleanup什么也不做，让CustomTimerDPC去处理一切
-			}
+            else
+            {
+                // TODO(H): EventCleanup先获取SpinLock, 但在尚未IoCompleteRequest之前，CustomTimerDPC开始运行，
+                //          于是CustomTimerDPC阻塞于SpinLock
+                //          此时，EventCleanup什么也不做，让CustomTimerDPC去处理一切
+            }
         }
     }
 
@@ -643,7 +639,7 @@ Return Value:
 
     deviceExtension = DeviceObject->DeviceExtension;
 
-	// TODO(H): 对IRP的Cancel routine这个也不是太清楚
+    // TODO(H): 对IRP的Cancel routine这个也不是太清楚
     //
     // Release the cancel spinlock
     //
@@ -668,8 +664,8 @@ Return Value:
     notifyRecord->Message.PendingIrp = NULL;
 
     if (KeCancelTimer(&notifyRecord->Timer)) {
-		// TODO(H): 说明和该IRP管理的定时器对象还没有触发，也就是说CustomTimerDPC截止到
-		//			此刻为止还没有运行
+        // TODO(H): 说明和该IRP管理的定时器对象还没有触发，也就是说CustomTimerDPC截止到
+        //          此刻为止还没有运行
         DebugPrint(("\t canceled timer\n"));
         ExFreePoolWithTag(notifyRecord, TAG);
         notifyRecord = NULL;
@@ -683,14 +679,14 @@ Return Value:
         // dpc is waiting to acquire the lock and access the notifyRecord memory.
         //
         if (notifyRecord->CancelRoutineFreeMemory == FALSE) {
-			// TODO(H): 该函数已获取SpinLock，当在取消Timer之前，CustomTimerDPC已经在运行，阻塞于SpinLock
+            // TODO(H): 该函数已获取SpinLock，当在取消Timer之前，CustomTimerDPC已经在运行，阻塞于SpinLock
             //
             // This is case 1 where the DPC is waiting to run.
             //
             InitializeListHead(&notifyRecord->ListEntry);
         } else {
 
-			// TODO(H): 该IRP被cancel，但CustomTimerDPC相较于该函数先获取了自旋锁
+            // TODO(H): 该IRP被cancel，但CustomTimerDPC相较于该函数先获取了自旋锁
             //
             // This is either 2 or 3.
             //
@@ -767,8 +763,8 @@ Return Value:
         if (irp != NULL) {
             if (IoSetCancelRoutine(irp, NULL) != NULL) {
                 
-				// TODO(H): 成功remove这个IRP的CancelRoutine，说明这个IRP没有被cancel，
-				//			所以这里该函数和EventCancelRoutine之间没有竞争关系
+                // TODO(H): 成功remove这个IRP的CancelRoutine，说明这个IRP没有被cancel，
+                //          所以这里该函数和EventCancelRoutine之间没有竞争关系
                 irp->Tail.Overlay.DriverContext[3] = NULL;
 
                 //
@@ -787,10 +783,10 @@ Return Value:
 
             } else {
 
-				// TODO(H): 该IRP被cancel了，但是该函数相较于EventCancelRoutine先获取了自旋锁。
-				//			但在这里，我们什么也不做，而是让EventCancelRoutine去处理一切。
-				//			就是说，我们认定EventCancelRoutine的优先级高于该函数。即使该函数先
-				//			获取到了自旋锁，也让EventCancelRoutine去处理这个IRP
+                // TODO(H): 该IRP被cancel了，但是该函数相较于EventCancelRoutine先获取了自旋锁。
+                //          但在这里，我们什么也不做，而是让EventCancelRoutine去处理一切。
+                //          就是说，我们认定EventCancelRoutine的优先级高于该函数。即使该函数先
+                //          获取到了自旋锁，也让EventCancelRoutine去处理这个IRP
                 //
 
                 // Cancel routine will run as soon as we release the lock.
@@ -802,8 +798,8 @@ Return Value:
             }
         } else {
 
-			// TODO(H):	IRP被cancel，且Cancel Routine EventCancelRoutine先获取SpinLock，但在
-			//			当在EventCancelRoutine取消Timer之前，我们已经在已经在运行了，然后阻塞于SpinLock
+            // TODO(H): IRP被cancel，且Cancel Routine EventCancelRoutine先获取SpinLock，但在
+            //          当在EventCancelRoutine取消Timer之前，我们已经在已经在运行了，然后阻塞于SpinLock
             //
 
             // Cancel routine has run and completed the IRP. So just free
@@ -915,7 +911,7 @@ Return Value:
 
     // ensure relative time for this sample
 
-	// TODO(H): 这里应该写错了吧
+    // TODO(H): 这里应该写错了吧
     //          没写错，我看错了
     if (registerEvent->DueTime.QuadPart > 0) {
         registerEvent->DueTime.QuadPart = -(registerEvent->DueTime.QuadPart);
@@ -985,7 +981,7 @@ Return Value:
 
     notifyRecord->CancelRoutineFreeMemory = FALSE;
 
-	// TODO(H): 这里也学习一下
+    // TODO(H): 这里也学习一下
 
     //
     // We will save the record pointer in the IRP so that we can get to
@@ -1094,7 +1090,7 @@ Return Value:
         registerEvent->DueTime.QuadPart = -(registerEvent->DueTime.QuadPart);
     }
 
-	// TODO(H): DPC和定时器的一些东西又忘了
+    // TODO(H): DPC和定时器的一些东西又忘了
     KeInitializeDpc(&notifyRecord->Dpc, // Dpc
                     CustomTimerDPC,     // DeferredRoutine
                     notifyRecord        // DeferredContext
